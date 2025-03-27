@@ -15,7 +15,7 @@ function Quiz() {
   const playerName = localStorage.getItem('playerName') || 'Player';
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/questions?level=${level}`)
+    fetch(` https://car-quiz-backend.onrender.com/api/questions?level=${level}`)
       .then(res => res.json())
       .then(data => {
         setQuestions(data);
@@ -35,11 +35,11 @@ function Quiz() {
         const next = parseFloat((prev - 0.1).toFixed(1));
         if (next <= 0) {
           clearInterval(interval);
-          fetch('http://localhost:5000/api/scores', {
+          fetch('https://car-quiz-backend.onrender.com/api/scores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: playerName, score, level })
-          })
+          })          
             .then(() => {
               navigate(`/leaderboard/${level}?score=${score}`);
             })
@@ -58,11 +58,12 @@ function Quiz() {
 
   const handleAnswer = (isCorrect) => {
     if (!isCorrect) {
-      fetch('http://localhost:5000/api/scores', {
+      fetch('https://car-quiz-backend.onrender.com/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: playerName, score, level })
       })
+      
         .then(() => {
           navigate(`/leaderboard/${level}?score=${score}`);
         })
@@ -79,7 +80,7 @@ function Quiz() {
       setCurrentIndex(currentIndex + 1);
       setTimer(5.0);
     } else {
-      fetch('http://localhost:5000/api/scores', {
+      fetch('https://car-quiz-backend.onrender.com/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: playerName, score: score + 1, level })

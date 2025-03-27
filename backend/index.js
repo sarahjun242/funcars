@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://sarahsfuncars.vercel.app' // ✅ allow ONLY your frontend
+}));
 app.use(express.json());
 
 const questionRoutes = require('./routes/questions');
@@ -23,5 +25,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(5000, () => {
-  console.log('🚀 Backend running on http://localhost:5000');
+  console.log('🚀 Backend running on https://car-quiz-backend.onrender.com/api/questions?level=easy');
 });
+
+
