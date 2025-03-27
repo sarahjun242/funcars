@@ -104,7 +104,7 @@ function Quiz() {
     <div style={{
       textAlign: 'center',
       padding: '20px',
-      paddingTop: '240px',
+      paddingTop: '160px', 
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center'
