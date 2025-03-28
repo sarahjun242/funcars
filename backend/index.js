@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-  origin: 'https://sarahsfuncars.vercel.app' // ✅ allow ONLY your frontend
+  origin: '*',
 }));
 app.use(express.json());
 
@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(5000, () => {
-  console.log('🚀 Backend running on https://car-quiz-backend.onrender.com/api/questions?level=easy');
+  console.log('🚀 Backend running on http://localhost:5000');
 });
 
 

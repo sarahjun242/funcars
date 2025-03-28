@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import BouncyButton from '../components/BouncyButton';
 
+// Define API URL dynamically
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function Quiz() {
   const { level } = useParams();
   const navigate = useNavigate();
@@ -14,8 +17,12 @@ function Quiz() {
 
   const playerName = localStorage.getItem('playerName') || 'Player';
 
+  // Fetch questions dynamically based on level
   useEffect(() => {
-    fetch(` https://car-quiz-backend.onrender.com/api/questions?level=${level}`)
+    console.log('API URL:', API_URL);
+    console.log(`Fetching from: ${API_URL}/api/questions?level=${level}`);
+    
+    fetch(`${API_URL}/api/questions?level=${level}`)
       .then(res => res.json())
       .then(data => {
         setQuestions(data);
@@ -27,50 +34,45 @@ function Quiz() {
       });
   }, [level]);
 
+  // Timer countdown logic
   useEffect(() => {
     if (questions.length === 0) return;
 
     const interval = setInterval(() => {
-      setTimer(prev => {
+      setTimer((prev) => {
         const next = parseFloat((prev - 0.1).toFixed(1));
         if (next <= 0) {
           clearInterval(interval);
-          fetch('https://car-quiz-backend.onrender.com/api/scores', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: playerName, score, level })
-          })          
-            .then(() => {
-              navigate(`/leaderboard/${level}?score=${score}`);
-            })
-            .catch((err) => {
-              console.error('Failed to save score:', err);
-              navigate(`/leaderboard/${level}?score=${score}`);
-            });
+          endGame(); // End the game when timer hits 0
           return 0;
         }
         return next;
       });
-    }, 100);
+    }, 100); // Updates every 100ms
 
     return () => clearInterval(interval);
   }, [questions]);
 
+  // Handle end of game and submit score
+  const endGame = () => {
+    fetch(`${API_URL}/api/scores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: playerName, score, level })
+    })
+      .then(() => {
+        navigate(`/leaderboard/${level}?score=${score}`);
+      })
+      .catch((err) => {
+        console.error('Failed to save score:', err);
+        navigate(`/leaderboard/${level}?score=${score}`);
+      });
+  };
+
+  // Handle answer selection
   const handleAnswer = (isCorrect) => {
     if (!isCorrect) {
-      fetch('https://car-quiz-backend.onrender.com/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: playerName, score, level })
-      })
-      
-        .then(() => {
-          navigate(`/leaderboard/${level}?score=${score}`);
-        })
-        .catch((err) => {
-          console.error('Failed to save score:', err);
-          navigate(`/leaderboard/${level}?score=${score}`);
-        });
+      endGame(); // Wrong answer = end game immediately
       return;
     }
 
@@ -78,20 +80,9 @@ function Quiz() {
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setTimer(5.0);
+      setTimer(5.0); // Reset timer
     } else {
-      fetch('https://car-quiz-backend.onrender.com/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: playerName, score: score + 1, level })
-      })
-        .then(() => {
-          navigate(`/leaderboard/${level}?score=${score + 1}`);
-        })
-        .catch((err) => {
-          console.error('Failed to save score:', err);
-          navigate(`/leaderboard/${level}?score=${score + 1}`);
-        });
+      endGame(); // End game when all questions are answered
     }
   };
 
@@ -101,19 +92,23 @@ function Quiz() {
   const current = questions[currentIndex];
 
   return (
-    <div style={{
-      textAlign: 'center',
-      padding: '20px',
-      paddingTop: '160px', 
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
-    }}>
-      <p style={{
-        fontSize: '16px',
-        fontWeight: 'normal',
-        marginBottom: '20px'
-      }}>
+    <div
+      style={{
+        textAlign: 'center',
+        padding: '20px',
+        paddingTop: '100px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}
+    >
+      <p
+        style={{
+          fontSize: '16px',
+          fontWeight: 'normal',
+          marginBottom: '20px'
+        }}
+      >
         {timer.toFixed(1)}s
       </p>
 
@@ -132,22 +127,26 @@ function Quiz() {
         }}
       />
 
-      <h3 style={{
-        fontWeight: 'normal',
-        fontSize: '16px',
-        marginBottom: '32px',
-        marginTop: '-20px',
-      }}>
+      <h3
+        style={{
+          fontWeight: 'normal',
+          fontSize: '16px',
+          marginBottom: '32px',
+          marginTop: '-20px'
+        }}
+      >
         {current.text}
       </h3>
 
-      <div style={{
-        width: '100%',
-        maxWidth: '300px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '300px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}
+      >
         {current.options.map((option, i) => (
           <BouncyButton
             key={i}
