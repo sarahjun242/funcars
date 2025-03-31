@@ -61,45 +61,51 @@ function Quiz() {
   }, [questions]);
 
   // 🚀 Handle end of game and submit score
-  const endGame = () => {
+  const endGame = (finalScore) => {
+    console.log('➡️ Submitting final score:', finalScore); // ✅ Log to check score submission
     fetch(`${API_URL}/api/scores`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: playerName, score, level })
+      body: JSON.stringify({ name: playerName, score: finalScore, level })
     })
-      .then(() => {
-        navigate(`/leaderboard/${level}?score=${score}`);
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('✅ Score submitted successfully:', data);
+        navigate(`/leaderboard/${level}?score=${finalScore}`);
       })
       .catch((err) => {
-        console.error('Failed to save score:', err);
-        navigate(`/leaderboard/${level}?score=${score}`);
+        console.error('❌ Failed to save score:', err);
+        navigate(`/leaderboard/${level}?score=${finalScore}`);
       });
   };
+  
 
   // 🎯 Handle answer selection
   const handleAnswer = (isCorrect) => {
+    const newScore = isCorrect ? score + 1 : score; // ✅ Updated score
+  
     if (isCorrect) {
       successAudio.play();
-      setFeedback({color: 'green', animate: true });
+      setFeedback({ color: 'green', animate: true });
     } else {
       errorAudio.play();
-      setFeedback({color: 'red', animate: true });
+      setFeedback({ color: 'red', animate: true });
       if (navigator.vibrate) {
-        navigator.vibrate(200); // Vibration for mobile
+        navigator.vibrate(200); // ✅ Mobile vibration on wrong answer
       }
     }
-
-    // ⏳ Wait for feedback to finish before proceeding
+  
     setTimeout(() => {
       setFeedback({ text: '', color: '', animate: false });
-
+  
       if (!isCorrect) {
-        endGame(); // End game after wrong answer
+        endGame(newScore); // Pass updated score when wrong
       } else if (currentIndex < questions.length - 1) {
         setCurrentIndex(currentIndex + 1);
-        setTimer(5.0); // Reset timer
+        setTimer(5.0);
+        setScore(newScore); // ✅ Update score if correct
       } else {
-        endGame(); // Game over after last question
+        endGame(newScore); // Pass updated score when all questions are done
       }
     }, 1200); // Show feedback for 1.2 seconds
   };

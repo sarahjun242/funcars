@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import BouncyButton from '../components/BouncyButton'; 
+import BouncyButton from '../components/BouncyButton';
 
-//Format date as MM/DD/YY
+// Format date as MM/DD/YY
 function formatDate(dateStr) {
   const date = new Date(dateStr);
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -11,6 +11,9 @@ function formatDate(dateStr) {
   return `${month}/${day}/${year}`;
 }
 
+// ✅ Define API URL dynamically for local/production
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function Leaderboard() {
   const { level } = useParams();
   const navigate = useNavigate();
@@ -18,48 +21,78 @@ function Leaderboard() {
 
   const [scores, setScores] = useState([]);
   const playerName = localStorage.getItem('playerName');
-  const playerScore = new URLSearchParams(location.search).get('score');
+  const playerScore = parseInt(new URLSearchParams(location.search).get('score'), 10);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/scores?level=${level}`)
+    console.log('Fetching from:', `${API_URL}/api/scores?level=${level}`);
+
+    fetch(`http://localhost:5000/api/scores?level=${level}&score=${playerScore}&name=${playerName}`)
       .then((res) => res.json())
-      .then((data) => setScores(data))
+      .then((data) => {
+        let updatedScores = [...data];
+
+        // Check if player's score is already in the top 10
+        const isInTop10 = updatedScores.some(
+          (entry) => entry.name === playerName && entry.score === playerScore
+        );
+
+        // If player's score is NOT in the top 10, add it to the bottom
+        if (!isInTop10) {
+          updatedScores.push({
+            name: playerName,
+            score: playerScore,
+            date: new Date().toISOString(),
+          });
+        }
+
+        setScores(updatedScores);
+      })
       .catch((err) => console.error('Error fetching leaderboard:', err));
-  }, [level]);
+  }, [level, playerName, playerScore]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      padding: '20px',
-      paddingTop: '240px',
-      fontFamily: "'Anonymous Pro', monospace",
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        padding: '20px',
+        paddingTop: '240px',
+        fontFamily: "'Anonymous Pro', monospace",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
       {/* Centered content container */}
-      <div style={{
-        width: '100%',
-        maxWidth: '300px'
-      }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '300px',
+        }}
+      >
         {/* Header */}
-        <h2 style={{
-          fontSize: '20px',
-          marginBottom: '30px',
-          textAlign: 'left'
-        }}>
+        <h2
+          style={{
+            fontSize: '20px',
+            marginBottom: '30px',
+            textAlign: 'left',
+          }}
+        >
           Leaderboard ({level.charAt(0).toUpperCase() + level.slice(1)})
         </h2>
 
         {/* Score List */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          marginBottom: '40px'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            marginBottom: '40px',
+          }}
+        >
           {scores.map((entry, i) => {
-            const isCurrent = entry.name === playerName && entry.score.toString() === playerScore;
+            const isCurrent =
+              entry.name === playerName && entry.score === playerScore;
+
             return (
               <div
                 key={i}
@@ -67,7 +100,7 @@ function Leaderboard() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   fontWeight: isCurrent ? 'bold' : 'normal',
-                  fontSize: '15px'
+                  fontSize: '15px',
                 }}
               >
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -80,22 +113,20 @@ function Leaderboard() {
           })}
         </div>
 
-        {/*Buttons */}
-        <BouncyButton 
-        onClick ={() => navigate (`/quiz/${level}`)}
-        style = {{ marginBottom: '12px'}}
+        {/* Buttons */}
+        <BouncyButton
+          onClick={() => navigate(`/quiz/${level}`)}
+          style={{ marginBottom: '12px' }}
         >
-          Play Again 
+          Play Again
         </BouncyButton>
 
-        <BouncyButton onClick ={() => navigate (`/levels`)}>
+        <BouncyButton onClick={() => navigate(`/levels`)}>
           Exit Level
         </BouncyButton>
-
       </div>
     </div>
   );
 }
 
-export default Leaderboard
-
+export default Leaderboard;

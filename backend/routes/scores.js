@@ -24,14 +24,33 @@ router.post('/', async (req, res) => {
 // GET /api/scores?level=easy → Get top scores for a level
 router.get('/', async (req, res) => {
   const level = req.query.level;
+  const playerScore = req.query.score ? parseInt(req.query.score) : null;
+  const playerName = req.query.name || '';
+
   try {
-    const topScores = await Score.find({ level })
+    let topScores = await Score.find({ level })
       .sort({ score: -1, date: -1 })
-      .limit(10);
+      .limit(10); // ✅ Show top 10 by default
+
+    // If player's score is lower than lowest score on leaderboard
+    if (playerScore !== null && topScores.length === 10) {
+      const lowestScore = topScores[topScores.length - 1].score;
+      if (playerScore < lowestScore) {
+        // Add the player's score at the bottom
+        topScores.push({
+          name: playerName,
+          score: playerScore,
+          level: level,
+          date: new Date().toISOString()
+        });
+      }
+    }
+
     res.json(topScores);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 module.exports = router;
